@@ -20,11 +20,10 @@ import javax.inject.Inject;
 import lombok.Getter;
 import net.runelite.api.Client;
 import net.runelite.api.GameState;
-import net.runelite.api.MenuOpcode;
+import net.runelite.api.MenuAction;
 import net.runelite.api.Point;
 import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.GameTick;
-import net.runelite.api.events.MenuEntryAdded;
 import net.runelite.api.events.MenuOptionClicked;
 import net.runelite.api.widgets.Widget;
 import net.runelite.api.widgets.WidgetID;
@@ -35,19 +34,16 @@ import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.events.ConfigChanged;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
-import net.runelite.client.plugins.PluginType;
 import net.runelite.client.ui.ClientToolbar;
 import net.runelite.client.ui.NavigationButton;
 import net.runelite.client.util.ImageUtil;
 import org.apache.commons.lang3.tuple.Pair;
-import org.jetbrains.annotations.NotNull;
 import org.pf4j.Extension;
 
 @Extension
 @PluginDescriptor(
 	name = "Chin break handler",
-	description = "Automatically takes breaks for you (?)",
-	type = PluginType.MISCELLANEOUS
+	description = "Automatically takes breaks for you (?)"
 )
 public class ChinBreakHandlerPlugin extends Plugin
 {
@@ -402,60 +398,6 @@ public class ChinBreakHandlerPlugin extends Plugin
 	}
 
 	@Subscribe
-	public void onMenuEntryAdded(MenuEntryAdded menuEntryAdded)
-	{
-		if (state == ChinBreakHandlerState.LOGIN_SCREEN)
-		{
-			Widget playButton = client.getWidget(WidgetID.LOGIN_CLICK_TO_PLAY_GROUP_ID, 78);
-
-			if (playButton == null)
-			{
-				return;
-			}
-
-			client.insertMenuItem(
-				"Play",
-				"",
-				1,
-				MenuOpcode.CC_OP.getId(),
-				-1,
-				playButton.getId(),
-				false
-			);
-		}
-		else if (state == ChinBreakHandlerState.LOGOUT_BUTTON)
-		{
-			Widget logoutButton = client.getWidget(182, 8);
-			Widget logoutDoorButton = client.getWidget(69, 23);
-			int param1 = -1;
-
-			if (logoutButton != null)
-			{
-				param1 = logoutButton.getId();
-			}
-			else if (logoutDoorButton != null)
-			{
-				param1 = logoutDoorButton.getId();
-			}
-
-			if (param1 == -1)
-			{
-				return;
-			}
-
-			client.insertMenuItem(
-				"Logout",
-				"",
-				1,
-				MenuOpcode.CC_OP.getId(),
-				-1,
-				param1,
-				false
-			);
-		}
-	}
-
-	@Subscribe
 	public void onMenuOptionClicked(MenuOptionClicked menuOptionClicked)
 	{
 		if (state == ChinBreakHandlerState.LOGIN_SCREEN)
@@ -467,12 +409,12 @@ public class ChinBreakHandlerPlugin extends Plugin
 				return;
 			}
 
-			menuOptionClicked.consume();
-			client.invokeMenuAction(
+			menuAction(
+				menuOptionClicked,
 				"Play",
 				"",
 				1,
-				MenuOpcode.CC_OP.getId(),
+				MenuAction.CC_OP,
 				-1,
 				playButton.getId()
 			);
@@ -500,12 +442,12 @@ public class ChinBreakHandlerPlugin extends Plugin
 				return;
 			}
 
-			menuOptionClicked.consume();
-			client.invokeMenuAction(
+			menuAction(
+				menuOptionClicked,
 				"Logout",
 				"",
 				1,
-				MenuOpcode.CC_OP.getId(),
+				MenuAction.CC_OP,
 				-1,
 				param1
 			);
@@ -530,7 +472,7 @@ public class ChinBreakHandlerPlugin extends Plugin
 		});
 	}
 
-	private void mouseEvent(int id, @NotNull Point point)
+	private void mouseEvent(int id, Point point)
 	{
 		MouseEvent mouseEvent = new MouseEvent(
 			client.getCanvas(), id,
@@ -601,5 +543,15 @@ public class ChinBreakHandlerPlugin extends Plugin
 			return false;
 		}
 		return true;
+	}
+
+	public void menuAction(MenuOptionClicked menuOptionClicked, String option, String target, int identifier, MenuAction menuAction, int param0, int param1)
+	{
+		menuOptionClicked.setMenuOption(option);
+		menuOptionClicked.setMenuTarget(target);
+		menuOptionClicked.setId(identifier);
+		menuOptionClicked.setMenuAction(menuAction);
+		menuOptionClicked.setActionParam(param0);
+		menuOptionClicked.setWidgetId(param1);
 	}
 }
